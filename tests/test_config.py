@@ -13,9 +13,9 @@ def test_missing_env_vars(caplog):
 
     with caplog.at_level(logging.WARNING):
         # 2) Reload the config module
-        import frsshproxy.config
+        import freshproxy.config
 
-        importlib.reload(frsshproxy.config)
+        importlib.reload(freshproxy.config)
 
         # 3) Check if a warning was logged
         assert "Proxy may not function correctly" in caplog.text
@@ -27,4 +27,4 @@ def test_missing_env_vars(caplog):
         os.environ["FRESHRSS_BASE_URL"] = old_base
 
     # 5) Reload again to restore original state
-    importlib.reload(frsshproxy.config)
+    importlib.reload(freshproxy.config)

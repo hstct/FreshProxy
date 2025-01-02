@@ -1,4 +1,4 @@
-# frsshproxy
+# FreshProxy
 
 A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greader API endpoint. This proxy handles **authorization**, whitelists specific sub-endpoints, and returns JSON data to your front end (or other clients) with optional CORS restrictions.
 
@@ -6,7 +6,7 @@ A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greade
 
 ## Overview
 
-**frsshproxy** is designed for situations where you want to:
+**FreshProxy** is designed for situations where you want to:
 - Keep a **FreshRSS** feed aggregator **private** behind a token.
 - Provide a **simple** proxy endpoint to your front-end or public apps without exposing credentials.
 - Restrict which API endpoints can be called (to prevent SSRF or malicious usage).
@@ -23,8 +23,8 @@ A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greade
 
 ```bash
 .
-├── frsshproxy
-│   ├── __init__.py      # Makes 'frsshproxy' a package
+├── freshproxy
+│   ├── __init__.py      # Makes 'freshproxy' a package
 │   ├── app.py           # Application factory & CORS setup
 │   ├── config.py        # Environment variables, whitelists
 │   └── proxy_routes.py  # Blueprint with the '/' GET route
@@ -43,7 +43,7 @@ A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greade
 
 ## Installation
 
-1. **Clone** the repo: `git clone https://github.com/hstct/frsshproxy.git`
+1. **Clone** the repo: `git clone https://github.com/hstct/FreshProxy.git`
 2. **Install dependencies** (pick one approach):
     - Using **requirements.txt**: `pip install -r requirements.txt`
     - Using **pyproject.toml**:
@@ -65,7 +65,7 @@ export FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php"
 - `FRESHRSS_API_TOKEN`: The auth token used by FreshRSS to authenticate requests.
 - `FRESHRSS_BASE_URL`: The base URL of your FreshRSS GReader API endpoint (no trailing slash).
 
-In `frsshproxy/config.py`:
+In `freshproxy/config.py`:
 
 - `ALLOWED_ENDPOINTS`: A set of valid suppaths. Any request with an `endpoint` not in this list returns 403.
 - `ALLOWED_ORIGINS`: Restrict which domains can call your proxy (CORS).
@@ -92,7 +92,7 @@ or open in your browser.
 
 1. **gunicorn** (common WSGI server):
 ```bash
-gunicorn --bind 0.0.0.0:8000 frsshproxy.app:create_app()
+gunicorn --bind 0.0.0.0:8000 freshproxy.app:create_app()
 ```
 
 2. **Configuration**:
@@ -107,7 +107,7 @@ A **Dockerfile** is included for container-based deployment:
 
 1. **Build** the Docker image:
 ```bash
-docker build -t frsshproxy .
+docker build -t freshproxy .
 ```
 
 2. **Run**:
@@ -115,7 +115,7 @@ docker build -t frsshproxy .
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
   -e FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php" \
-  frsshproxy
+  freshproxy
 ```
 
 3. **Access**:
@@ -139,4 +139,4 @@ flake8 .
 ```
 5. **Commit** & **push** your branch, then open a PR.
 
-We appreciate your help in making **frsshproxy** more robust and easier to use!
+We appreciate your help in making **FreshProxy** more robust and easier to use!

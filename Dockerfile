@@ -15,4 +15,4 @@ COPY . /app
 EXPOSE 8000
 
 # For production, run with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "frsshproxy.app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "FreshProxy.app:create_app()"]

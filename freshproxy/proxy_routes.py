@@ -2,7 +2,7 @@ import logging
 import requests
 
 from flask import Blueprint, request, jsonify
-from frsshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS
+from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS
 
 proxy_bp = Blueprint("proxy_bp", __name__)
 

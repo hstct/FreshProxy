@@ -1,4 +1,4 @@
-from frsshproxy.app import create_app
+from freshproxy.app import create_app
 
 app = create_app()
 

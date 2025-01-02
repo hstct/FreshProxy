@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from unittest.mock import patch, MagicMock
-from frsshproxy.app import create_app
+from freshproxy.app import create_app
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_disallowed_endpoint(client):
     assert "not allowed" in response.get_json()["error"]
 
 
-@patch("frsshproxy.proxy_routes.requests.get")
+@patch("freshproxy.proxy_routes.requests.get")
 def test_valid_endpoint(mock_get, client):
     """
     Test a happy path scenario where requests.get returns a 200 with valid JSON.
@@ -61,7 +61,7 @@ def test_valid_endpoint(mock_get, client):
     assert kwargs["timeout"] == 10
 
 
-@patch("frsshproxy.proxy_routes.requests.get")
+@patch("freshproxy.proxy_routes.requests.get")
 def test_timeout(mock_get, client):
     """
     Test that a timeout in requests.get leads to a 504 response.
@@ -73,7 +73,7 @@ def test_timeout(mock_get, client):
     assert "timed out" in response.get_json()["error"]
 
 
-@patch("frsshproxy.proxy_routes.requests.get")
+@patch("freshproxy.proxy_routes.requests.get")
 def test_json_decode_error(mock_get, client):
     """
     Test that a JSON decode error leads to a 500 response.

@@ -1,5 +1,5 @@
 [project]
-name = "frsshproxy"
+name = "FreshProxy"
 version = "0.1.0"
 description = "A minimal Flask proxy for a FreshRSS instance"
 readme = "README.md"
@@ -21,6 +21,7 @@ dependencies = [
     "Flask~=4.0.0",
     "Flask-Cors~=6.0.0",
     "requests~=2.50.0",
+    "python-dotenv~=",
 ]
 
 [project.optional-dependencies]

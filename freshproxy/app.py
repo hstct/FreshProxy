@@ -2,8 +2,8 @@ import logging
 
 from flask import Flask
 from flask_cors import CORS
-from frsshproxy.config import ALLOWED_ORIGINS
-from frsshproxy.proxy_routes import proxy_bp
+from freshproxy.config import ALLOWED_ORIGINS
+from freshproxy.proxy_routes import proxy_bp
 
 
 def create_app():
