@@ -1,49 +1,46 @@
 # FreshProxy
 
-A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greader API endpoint. This proxy handles **authorization**, whitelists specific sub-endpoints, and returns JSON data to your front end (or other clients) with optional CORS restrictions.
-
----
+A **Flask**-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) that fetches feed data securely, whitelists specific API endpoints, and controls CORS. Configurable via environment variables (or a `.env` file).
 
 ## Overview
 
-**FreshProxy** is designed for situations where you want to:
-- Keep a **FreshRSS** feed aggregator **private** behind a token.
-- Provide a **simple** proxy endpoint to your front-end or public apps without exposing credentials.
-- Restrict which API endpoints can be called (to prevent SSRF or malicious usage).
-- Control **CORS** so only certain origins can call the proxy.
+**FreshProxy** is designed to act as a small, focused **HTTP proxy** in front of a **FreshRSS** instance. It hides your auth token from client applications by forwarding authorized requests, only exposing safe, **whitelisted** sub-endpoints. This helps prevent SSRF attacks or direct credential leaks.
 
-**Key features:**
-- **Whitelist** approach for valid sub-endpoints (e.g., `subscription/list`, `stream/contents`).
-- **Environment-based** auth token and base URL (so you don't commit secrets).
-- **Timeout** and error handling (return 504 on timeouts, 502 on request errors, etc).
+## Features
 
----
+- **Whitelist** approach for `endpoint` subpaths (like `subscription/list`, etc).
+- **CORS** restrictions to only allow certain origins.
+- **Timeout** and error handling for upstream requests.
+- **Environment-based configuration** (via `.env` or standard env vars).
 
 ## Project Structure
 
-```bash
-.
-├── freshproxy
+```text
+freshproxy/
+├── freshproxy/
 │   ├── __init__.py      # Makes 'freshproxy' a package
 │   ├── app.py           # Application factory & CORS setup
 │   ├── config.py        # Environment variables, whitelists
 │   └── proxy_routes.py  # Blueprint with the '/' GET route
-├── tests
+├── tests/
 │   ├── test_config.py   # Example environment var tests
 │   └── test_proxy.py    # Proxy route tests (mocking requests)
 ├── requirements.txt     # Dependencies (Flask, requests, etc.)
 ├── pyproject.toml       # Project metadata & optional deps
 ├── run.py               # Dev entry point
 ├── Dockerfile           # Container-based deployment
+├── .env.example         # Example environment variables (no secrets)
 ├── .gitignore
-└── README.md            # This file
+└── README.md
 ```
-
----
 
 ## Installation
 
-1. **Clone** the repo: `git clone https://github.com/hstct/FreshProxy.git`
+1. **Clone** the repository:
+```bash
+git clone https://github.com/hstct/FreshProxy.git
+cd FreshProxy
+```
 2. **Install dependencies** (pick one approach):
     - Using **requirements.txt**: `pip install -r requirements.txt`
     - Using **pyproject.toml**:
@@ -52,91 +49,97 @@ A minimal **Flask**-based proxy for forwarding requests to a **FreshRSS** Greade
     # or for dev/test extras
     pip install .[test,lint]
     ```
-3. **Set environment variables** (at least):
-```bash
-export FRESHRSS_API_TOKEN="my-secret-token"
-export FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php"
+3. **(Optional) Provide a `.env` file**:
+    - Copy `.env.example` to `.env`.
+    - Fill in actual secrets and config.
+    - See [Configuration via .env](#configuration-via-env) below.
+
+## Configuration via .env
+
+**freshproxy/config.py** uses `python-dotenv` to load environment variables.
+
+- `FRESHRSS_API_TOKEN`: Secret token used to call FreshRSS behind the scenes.
+- `FRESHRSS_BASE_URL`: Root URL of your FreshRSS GReader API (no trailing slash).
+- `FRESHPROXY_ALLOWED_ENDPOINTS`: Comma-separated subpaths that the proxy allows (e.g. `subscription/list,stream/contents`).
+- `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
+- `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
+- `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
+- `FRESHPROXY_DEBUG`: Whether or not to run the application in Debug mode. (Default: `False`)o
+
+A sample `.env.example` might look like:
+
+```dotenv
+FRESHRSS_API_TOKEN=your-secret-token
+FRESHRSS_BASE_URL=https://freshrss.example.com/greader.php
+
+FRESHPROXY_ALLOWED_ENDPOINTS=subscription/list,stream/contents,marker/tag/lists
+FRESHPROXY_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
+FRESHPROXY_HOST=0.0.0.0
+FRESHPROXY_PORT=8000
+FRESHPROXY_DEBUG=False
 ```
 
----
+## Running the Proxy
 
-## Configuration
+### Local Development
 
-- `FRESHRSS_API_TOKEN`: The auth token used by FreshRSS to authenticate requests.
-- `FRESHRSS_BASE_URL`: The base URL of your FreshRSS GReader API endpoint (no trailing slash).
-
-In `freshproxy/config.py`:
-
-- `ALLOWED_ENDPOINTS`: A set of valid suppaths. Any request with an `endpoint` not in this list returns 403.
-- `ALLOWED_ORIGINS`: Restrict which domains can call your proxy (CORS).
-
----
-
-## Running the App
-
-### Development Mode
-
-1. **Local**:
+1. Edit or create `.env` with your secrets and config.
+2. Run in dev mode:
 ```bash
 python run.py
 ```
-This starts Flask on `http://0.0.0.0:8000`. By default, `debug=False`; adjust as needed.
-
-2. **Check**:
+3. Check the endpoint:
 ```bash
-curl "http://localhost:8000/?endpoint=subscription/list"
+curl "https://localhost:8000/?endpoint=subscription/list"
 ```
 or open in your browser.
 
 ### Production
 
-1. **gunicorn** (common WSGI server):
+**Gunicorn** is recommended:
 ```bash
 gunicorn --bind 0.0.0.0:8000 freshproxy.app:create_app()
 ```
 
-2. **Configuration**:
-    - You should still set environment variables for tokens and base URL.
-    - Make sure to restrict or manage logs, timeouts, etc. in production environment.
-
----
+Ensure you set env variables (e.g., via Docker, a systemd file, or your hosting environment).
 
 ## Docker Usage
 
 A **Dockerfile** is included for container-based deployment:
 
-1. **Build** the Docker image:
+1. Build the Docker image:
 ```bash
 docker build -t freshproxy .
 ```
-
-2. **Run**:
+2. Run it:
 ```bash
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
   -e FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php" \
+  -e FRESHPROXY_ALLOWED_ENDPOINTS="subcription/list,stream/contents" \
+  -e FRESHPROXY_ALLOWED_ORIGINS="http://localhost:3000,https://mydomain.com" \
+  -e FRESHPROXY_HOST="0.0.0.0" \
+  -e FRESHPROXY_PORT=8000 \
+  -e FRESHPROXY_DEBUG=False \
   freshproxy
 ```
-
-3. **Access**:
+3. Test:
 ```bash
 curl "http://localhost:8000/?endpoint=subscription/list"
 ```
 
----
-
 ## Contributing
 
-Contributions via pull requests or suggestions in issues are welcome. When contributing:
+Contributions via pull requests or suggestions in issues are welcome! Please open an issue for discussion first if it's a major change. When contributing:
 
-1. **Fork** & **clone** the repo.
+1. Fork & clone the repository locally.
 2. Create new feature/bug branch: `git checkout -b feature/my-feature`.
-3. Make changes, add tests if needed.
-4. **Lint** & **format** your code:
+3. Make changes, add tests if relevant.
+4. Lint & format your code:
 ```bash
 black .
 flake8 .
 ```
-5. **Commit** & **push** your branch, then open a PR.
+5. Commit & push your branch, then open a pull request.
 
 We appreciate your help in making **FreshProxy** more robust and easier to use!
