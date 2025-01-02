@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A minimal Flask proxy for a FreshRSS instance"
 readme = "README.md"
 requires-python = ">=3.9"
-license = "MIT"
+license = { file = "LICENSE" }
 
 authors = [
   { name="hstct", email="mail@hostc.at" }
@@ -14,14 +14,15 @@ keywords = ["Flask", "FreshRSS", "proxy", "API"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Framework :: Flask",
-    "License :: OSI Approved :: MIT License"
+    "Operating System :: OS Indepenent",
+    "License :: OSI Approved :: GNU Affero General Public License v3"
 ]
 
 dependencies = [
     "Flask~=4.0.0",
     "Flask-Cors~=6.0.0",
     "requests~=2.50.0",
-    "python-dotenv~=",
+    "python-dotenv~=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,7 @@ lint = [
 
 [build-system]
 requires = ["setuptools>=65.5.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 100
