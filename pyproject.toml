@@ -19,20 +19,20 @@ classifiers = [
 ]
 
 dependencies = [
-    "Flask~=3.0.0",
-    "Flask-Cors~=6.0.0",
-    "requests~=2.50.0",
+    "Flask~=3.1.0",
+    "Flask-Cors~=5.0.0",
+    "requests~=2.32.0",
     "python-dotenv~=1.0.0",
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest~=9.0.0",
-    "pytest-cov~=7.0.0",
+    "pytest~=8.3.0",
+    "pytest-cov~=6.0.0",
 ]
 lint = [
-    "black~=24.0.0",
-    "flake8~=6.5.0",
+    "black~=24.10.0",
+    "flake8~=7.1.0",
 ]
 
 [build-system]
