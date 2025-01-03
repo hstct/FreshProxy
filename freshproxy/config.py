@@ -9,11 +9,11 @@ load_dotenv()
 AUTH_TOKEN = os.getenv("FRESHRSS_API_TOKEN", "")
 BASE_URL = os.getenv("FRESHRSS_BASE_URL", "").rstrip("/")
 ALLOWED_ORIGINS = os.getenv("FRESHPROXY_ALLOWED_ORIGINS", "")
-ALLOWED_ENDPOINTS = os.getenv(
-    "FRESHPROXY_ALLOWED_ENDPOINTS", "subscription/list,stream/contents,marker/tag/lists"
-)
+ALLOWED_ENDPOINTS = os.getenv("FRESHPROXY_ALLOWED_ENDPOINTS", "subscription/list,marker/tag/lists")
+ALLOWED_PREFIXES = os.getenv("FRESHPROXY_ALLOWED_PREFIXES", "stream/contents")
 
 ALLOWED_ENDPOINTS = [ep.strip() for ep in ALLOWED_ENDPOINTS.split(",")]
+ALLOWED_PREFIXES = [prefix.strip() for prefix in ALLOWED_PREFIXES.split(",")]
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(",")]
 
 DEBUG = os.getenv("FRESHPROXY_DEBUG", "False").lower() == "true"

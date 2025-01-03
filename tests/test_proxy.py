@@ -62,6 +62,31 @@ def test_valid_endpoint(mock_get, client):
 
 
 @patch("freshproxy.proxy_routes.requests.get")
+def test_valid_prefix_endpoint(mock_get, client):
+    """
+    Test a valid prefix endpoint with subpaths and query parameters.
+    """
+    # Mock requests.get to return a successful response
+    mock_response = MagicMock()
+    mock_response.ok = True
+    mock_response.json.return_value = {"feeds": ["Feed1", "Feed2"]}
+    mock_get.return_value = mock_response
+
+    # Call a prefixed endpoint with subpath and query params
+    response = client.get("/?endpoint=stream/contents/feed/40&n=1")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "feeds" in data
+    assert data["feeds"] == ["Feed1", "Feed2"]
+
+    # Ensure the mock was called correctly
+    mock_get.assert_called_once()
+    _, kwargs = mock_get.call_args
+    assert kwargs["params"] == {"n": "1"}
+    assert kwargs["timeout"] == 10
+
+
+@patch("freshproxy.proxy_routes.requests.get")
 def test_timeout(mock_get, client):
     """
     Test that a timeout in requests.get leads to a 504 response.
@@ -86,3 +111,12 @@ def test_json_decode_error(mock_get, client):
     assert response.status_code == 500
     body = response.get_json()
     assert "Failed to decode JSON response" in body["error"]
+
+
+def test_endpoint_with_query_params_rejected(client):
+    """
+    Test that an endpoint containing '?' is rejected.
+    """
+    response = client.get("/?endpoint=subscription/list?output=json")
+    assert response.status_code == 403
+    assert "not allowed" in response.get_json()["error"]

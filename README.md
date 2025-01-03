@@ -61,6 +61,7 @@ cd FreshProxy
 - `FRESHRSS_API_TOKEN`: Secret token used to call FreshRSS behind the scenes.
 - `FRESHRSS_BASE_URL`: Root URL of your FreshRSS GReader API (no trailing slash).
 - `FRESHPROXY_ALLOWED_ENDPOINTS`: Comma-separated subpaths that the proxy allows (e.g. `subscription/list,stream/contents`).
+- `FRESHPROXY_ALLOWED_PREFIXES`: Comma-separated prefixes for endpoints that allow subpaths.
 - `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
 - `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
 - `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
@@ -73,6 +74,7 @@ FRESHRSS_API_TOKEN=your-secret-token
 FRESHRSS_BASE_URL=https://freshrss.example.com/greader.php
 
 FRESHPROXY_ALLOWED_ENDPOINTS=subscription/list,stream/contents,marker/tag/lists
+FRESHPROXY_ALLOWED_PREFIXES=stream/contents/feed/
 FRESHPROXY_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
 FRESHPROXY_HOST=0.0.0.0
 FRESHPROXY_PORT=8000
@@ -116,7 +118,8 @@ docker build -t freshproxy .
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
   -e FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php" \
-  -e FRESHPROXY_ALLOWED_ENDPOINTS="subcription/list,stream/contents" \
+  -e FRESHPROXY_ALLOWED_ENDPOINTS="subcription/list" \
+  -e FRESHPROXY_ALLOWED_PREFIXES="stream/contents" \
   -e FRESHPROXY_ALLOWED_ORIGINS="http://localhost:3000,https://mydomain.com" \
   -e FRESHPROXY_HOST="0.0.0.0" \
   -e FRESHPROXY_PORT=8000 \

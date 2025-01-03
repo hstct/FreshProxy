@@ -2,13 +2,19 @@ import logging
 import requests
 
 from flask import Blueprint, request, jsonify
-from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS
+from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS, ALLOWED_PREFIXES
 
 proxy_bp = Blueprint("proxy_bp", __name__)
 
 
 def is_endpoint_allowed(endpoint: str) -> bool:
-    return endpoint in ALLOWED_ENDPOINTS
+    if endpoint in ALLOWED_ENDPOINTS:
+        return True
+
+    for prefix in ALLOWED_PREFIXES:
+        if endpoint.startswith(prefix):
+            return True
+    return False
 
 
 @proxy_bp.route("/", methods=["GET"])
@@ -28,9 +34,11 @@ def proxy():
     url = f"{BASE_URL}/{endpoint.lstrip('/')}"
     headers = {"Authorization": f"GoogleLogin auth={AUTH_TOKEN}"}
 
+    params = {k: v for k, v in request.args.items() if k != "endpoint"}
+
     try:
-        logging.info(f"Fetching data from: {url}")
-        response = requests.get(url, headers=headers, timeout=10)
+        logging.info(f"Fetching data from: {url} with params: {params}")
+        response = requests.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         return jsonify(data)
