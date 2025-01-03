@@ -65,7 +65,7 @@ cd FreshProxy
 - `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
 - `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
 - `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
-- `FRESHPROXY_DEBUG`: Whether or not to run the application in Debug mode. (Default: `False`)o
+- `FRESHPROXY_DEBUG`: Whether or not to run the application in Debug mode. (Default: `False`)
 
 A sample `.env.example` might look like:
 
