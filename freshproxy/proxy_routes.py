@@ -3,7 +3,8 @@ import requests
 
 from typing import Union, Tuple
 from flask import Blueprint, request, jsonify, Response
-from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS
+from flask_cors import cross_origin
+from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS, ALLOWED_ORIGINS
 
 proxy_bp = Blueprint("proxy_bp", __name__)
 
@@ -39,6 +40,7 @@ def proxy_request(endpoint: str, params: dict) -> Union[Response, Tuple[Response
 
 
 @proxy_bp.route("/subscriptions", methods=["GET"])
+@cross_origin(origins=ALLOWED_ORIGINS)
 def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
     """
     Proxy endpoint for /subscriptions -> FreshRSS subscription/list
@@ -55,6 +57,7 @@ def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
 
 
 @proxy_bp.route("/feeds/<feed_id>", methods=["GET"])
+@cross_origin(origins=ALLOWED_ORIGINS)
 def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Proxy endpoint for /feeds/<id> -> FreshRSS stream/contents/feed/<id>

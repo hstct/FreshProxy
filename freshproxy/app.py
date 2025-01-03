@@ -15,8 +15,8 @@ def create_app():
 
     logging.basicConfig(level=logging.INFO if not DEBUG else logging.DEBUG)
 
-    CORS(app, resources={r"/": {"origins": ALLOWED_ORIGINS}})
-
     app.register_blueprint(proxy_bp, url_prefix="")
+
+    CORS(app, resources={r"/": {"origins": ALLOWED_ORIGINS}})
 
     return app
