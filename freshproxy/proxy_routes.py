@@ -1,51 +1,30 @@
 import logging
 import requests
 
-from flask import Blueprint, request, jsonify
-from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS, ALLOWED_PREFIXES
+from typing import Union, Tuple
+from flask import Blueprint, request, jsonify, Response
+from freshproxy.config import AUTH_TOKEN, BASE_URL, ALLOWED_ENDPOINTS
 
 proxy_bp = Blueprint("proxy_bp", __name__)
 
 
-def is_endpoint_allowed(endpoint: str) -> bool:
-    if endpoint in ALLOWED_ENDPOINTS:
-        return True
-
-    for prefix in ALLOWED_PREFIXES:
-        if endpoint.startswith(prefix):
-            return True
-    return False
-
-
-@proxy_bp.route("/", methods=["GET"])
-def proxy():
-    endpoint = request.args.get("endpoint")
-    if not endpoint:
-        return (
-            jsonify({"error": "No endpoint specified. Use ?endpoint=<your-endpoint>"}),
-            400,
-        )
-
-    if not is_endpoint_allowed(endpoint):
-        logging.error(f"Endpoint '{endpoint}' is not allowed.")
-        return jsonify({"error": f"Endpoint '{endpoint}' not allowed"}), 403
-
-    # Construct the URL safely
-    url = f"{BASE_URL}/{endpoint.lstrip('/')}"
+def proxy_request(endpoint: str, params: dict) -> Union[Response, Tuple[Response, int]]:
+    """
+    Helper function to proxy requests to FrehsRSS.
+    """
+    url = f"{BASE_URL}/{endpoint}"
     headers = {"Authorization": f"GoogleLogin auth={AUTH_TOKEN}"}
 
-    params = {k: v for k, v in request.args.items() if k != "endpoint"}
-
     try:
-        logging.info(f"Fetching data from: {url} with params: {params}")
+        logging.info(f"Fetching data from: {url} with param: {params}")
         response = requests.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         return jsonify(data)
 
     except requests.Timeout:
-        logging.error("Request to FreshRSS API timed out")
-        return jsonify({"error": "Request to FreshRSS API timed out"}), 504
+        logging.error("Request to FreshRSS GReader API timed out")
+        return jsonify({"error": "Request to FreshRSS GReader API timed out"}), 504
 
     except requests.RequestException as e:
         logging.error(f"Request error: {e}")
@@ -57,3 +36,34 @@ def proxy():
             jsonify({"error": "Failed to decode JSON response", "details": str(e)}),
             500,
         )
+
+
+@proxy_bp.route("/subscriptions", methods=["GET"])
+def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
+    """
+    Proxy endpoint for /subscriptions -> FreshRSS subscription/list
+    """
+    endpoint = ALLOWED_ENDPOINTS.get("subscriptions")
+    if not endpoint:
+        logging.error("FreshRSS endpoint for 'subscriptions' not configured.")
+        return jsonify({"error": "Internal server error"}), 500
+
+    params = request.args.to_dict()
+
+    return proxy_request(endpoint, params)
+
+
+@proxy_bp.route("/feeds/<feed_id>", methods=["GET"])
+def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
+    """
+    Proxy endpoint for /feeds/<id> -> FreshRSS stream/contents/feed/<id>
+    """
+    base_endpoint = ALLOWED_ENDPOINTS.get("feeds")
+    if not base_endpoint:
+        logging.error("FreshRSS base endpoint for 'feeds' not configured.")
+        return jsonify({"error": "Internal server error"}), 500
+
+    endpoint = f"{base_endpoint}/{feed_id}"
+    params = request.args.to_dict()
+
+    return proxy_request(endpoint, params)

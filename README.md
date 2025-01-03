@@ -1,14 +1,16 @@
 # FreshProxy
 
-A **Flask**-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) that fetches feed data securely, whitelists specific API endpoints, and controls CORS. Configurable via environment variables (or a `.env` file).
+A **Flask**-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) that securely forwards specific API requests, eliminating the need for dynamic query parameters. Configurable via environment variables (or a `.env` file).
 
 ## Overview
 
-**FreshProxy** is designed to act as a small, focused **HTTP proxy** in front of a **FreshRSS** instance. It hides your auth token from client applications by forwarding authorized requests, only exposing safe, **whitelisted** sub-endpoints. This helps prevent SSRF attacks or direct credential leaks.
+**FreshProxy** acts as a dedicated **HTTP proxy** for specific **FreshRSS** endpoints, enhancing security and simplifying request structures. By using dedicated proxy endpoints, you eliminate the need for dynamic query parameters, reducing potential attack vectors and improving clarity.
 
 ## Features
 
-- **Whitelist** approach for `endpoint` subpaths (like `subscription/list`, etc).
+- **Dedicated Proxy Endpoints**:
+    - `/subscriptions` -> `subscription/list`.
+    - `/feeds/<id>` -> `stream/contents/feed/<id>`.
 - **CORS** restrictions to only allow certain origins.
 - **Timeout** and error handling for upstream requests.
 - **Environment-based configuration** (via `.env` or standard env vars).
@@ -60,8 +62,6 @@ cd FreshProxy
 
 - `FRESHRSS_API_TOKEN`: Secret token used to call FreshRSS behind the scenes.
 - `FRESHRSS_BASE_URL`: Root URL of your FreshRSS GReader API (no trailing slash).
-- `FRESHPROXY_ALLOWED_ENDPOINTS`: Comma-separated subpaths that the proxy allows (e.g. `subscription/list,stream/contents`).
-- `FRESHPROXY_ALLOWED_PREFIXES`: Comma-separated prefixes for endpoints that allow subpaths.
 - `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
 - `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
 - `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
@@ -73,8 +73,6 @@ A sample `.env.example` might look like:
 FRESHRSS_API_TOKEN=your-secret-token
 FRESHRSS_BASE_URL=https://freshrss.example.com/greader.php
 
-FRESHPROXY_ALLOWED_ENDPOINTS=subscription/list,stream/contents,marker/tag/lists
-FRESHPROXY_ALLOWED_PREFIXES=stream/contents/feed/
 FRESHPROXY_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
 FRESHPROXY_HOST=0.0.0.0
 FRESHPROXY_PORT=8000
@@ -92,7 +90,7 @@ python run.py
 ```
 3. Check the endpoint:
 ```bash
-curl "https://localhost:8000/?endpoint=subscription/list"
+curl "https://localhost:8000/subscriptions"
 ```
 or open in your browser.
 
@@ -118,8 +116,6 @@ docker build -t freshproxy .
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
   -e FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php" \
-  -e FRESHPROXY_ALLOWED_ENDPOINTS="subcription/list" \
-  -e FRESHPROXY_ALLOWED_PREFIXES="stream/contents" \
   -e FRESHPROXY_ALLOWED_ORIGINS="http://localhost:3000,https://mydomain.com" \
   -e FRESHPROXY_HOST="0.0.0.0" \
   -e FRESHPROXY_PORT=8000 \
@@ -128,7 +124,7 @@ docker run -p 8000:8000 \
 ```
 3. Test:
 ```bash
-curl "http://localhost:8000/?endpoint=subscription/list"
+curl "http://localhost:8000/subscriptions"
 ```
 
 ## Contributing
