@@ -49,6 +49,7 @@ def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
         return jsonify({"error": "Internal server error"}), 500
 
     params = request.args.to_dict()
+    params.update({"output": "json"})
 
     return proxy_request(endpoint, params)
 
