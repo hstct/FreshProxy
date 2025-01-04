@@ -55,22 +55,22 @@ def test_valid_subscriptions(mock_get, client):
 @patch("freshproxy.proxy_routes.requests.get")
 def test_valid_feed_contents(mock_get, client):
     """
-    Test the /feeds/<id> endpoint with query parameters.
+    Test the /feed/<id> endpoint with query parameters.
     """
     mock_response = MagicMock()
     mock_response.ok = True
-    mock_response.json.return_value = {"feeds": ["Feed1", "Feed2"]}
+    mock_response.json.return_value = {"feed": ["Feed1", "Feed2"]}
     mock_get.return_value = mock_response
 
     feed_id = "40"
     query_param = {"n": "1"}
 
-    response = client.get(f"/feeds/{feed_id}", query_string=query_param)
+    response = client.get(f"/feed/{feed_id}", query_string=query_param)
 
     assert response.status_code == 200
     data = response.get_json()
-    assert "feeds" in data
-    assert data["feeds"] == ["Feed1", "Feed2"]
+    assert "feed" in data
+    assert data["feed"] == ["Feed1", "Feed2"]
 
     mock_get.assert_called_once()
     _, kwargs = mock_get.call_args
@@ -113,7 +113,7 @@ def test_endpoint_with_query_params(mock_get, client):
     """
     mock_response = MagicMock()
     mock_response.ok = True
-    mock_response.json.return_value = {"feeds": ["Feed1", "Feed2"]}
+    mock_response.json.return_value = {"subscriptions": ["Feed1", "Feed2"]}
     mock_get.return_value = mock_response
     response = client.get("/subscriptions?output=json")
     assert response.status_code == 200

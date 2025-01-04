@@ -56,15 +56,15 @@ def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
     return proxy_request(endpoint, params)
 
 
-@proxy_bp.route("/feeds/<feed_id>", methods=["GET"])
+@proxy_bp.route("/feed/<feed_id>", methods=["GET"])
 @cross_origin(origins=ALLOWED_ORIGINS)
 def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
     """
-    Proxy endpoint for /feeds/<id> -> FreshRSS stream/contents/feed/<id>
+    Proxy endpoint for /feed/<id> -> FreshRSS stream/contents/feed/<id>
     """
-    base_endpoint = ALLOWED_ENDPOINTS.get("feeds")
+    base_endpoint = ALLOWED_ENDPOINTS.get("feed")
     if not base_endpoint:
-        logging.error("FreshRSS base endpoint for 'feeds' not configured.")
+        logging.error("FreshRSS base endpoint for 'feed' not configured.")
         return jsonify({"error": "Internal server error"}), 500
 
     endpoint = f"{base_endpoint}/{feed_id}"

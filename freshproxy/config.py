@@ -9,7 +9,7 @@ load_dotenv()
 AUTH_TOKEN = os.getenv("FRESHRSS_API_TOKEN", "")
 BASE_URL = os.getenv("FRESHRSS_BASE_URL", "").rstrip("/")
 ALLOWED_ORIGINS = os.getenv("FRESHPROXY_ALLOWED_ORIGINS", "")
-ALLOWED_ENDPOINTS = {"subscriptions": "subscription/list", "feeds": "stream/contents/feed"}
+ALLOWED_ENDPOINTS = {"subscriptions": "subscription/list", "feed": "stream/contents/feed"}
 
 ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(",")]
 
