@@ -48,7 +48,7 @@ def test_valid_subscriptions(mock_get, client):
     mock_get.assert_called_once()
     _, kwargs = mock_get.call_args
     assert "headers" in kwargs
-    assert kwargs["params"] == {}
+    assert kwargs["params"] == {"output": "json"}
     assert kwargs["timeout"] == 10
 
 
