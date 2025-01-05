@@ -3,17 +3,50 @@ import requests
 
 from unittest.mock import patch, MagicMock
 from freshproxy.app import create_app
+from freshproxy.config import AUTH_TOKEN, REQUEST_TIMEOUT
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
     """
     Pytest fixture to create a test client using the Flask app.
     """
+    monkeypatch.setenv("FRESHRSS_API_TOKEN", "test-token")
+    monkeypatch.setenv("FRESHRSS_BASE_URL", "https://freshrss.example.com/greader.php")
+    monkeypatch.setenv(
+        "FRESHPROXY_ALLOWED_ORIGINS",
+        "http://localhost:3000,https://test.com,https://proxy.example.com",
+    )
+    monkeypatch.setenv("FRESHPROXY_DEBUG", "True")
+    monkeypatch.setenv("FRESHPROXY_REQUEST_TIMEOUT", 5)
+
     app = create_app()
     app.testing = True
     with app.test_client() as client:
         yield client
+
+
+@pytest.fixture
+def mock_requests_get():
+    """
+    Pytest fixture to mock requests.get.
+    """
+    with patch("freshproxy.proxy_routes.requests.get") as mock_get:
+        yield mock_get
+
+
+@pytest.fixture
+def proxy_mock_response():
+    """
+    Pytest fixture to set up mock responses.
+    """
+    def _proxy_mock_response(return_value, success = True):
+        mock_response = MagicMock()
+        mock_response.ok = success
+        mock_response.json.return_value = return_value
+        return mock_response
+
+    return _proxy_mock_response
 
 
 def test_unsupported_endpoint(client):
@@ -24,43 +57,32 @@ def test_unsupported_endpoint(client):
     assert response.status_code == 404
 
 
-@patch("freshproxy.proxy_routes.requests.get")
-def test_valid_subscriptions(mock_get, client):
+def test_valid_subscriptions(mock_requests_get, proxy_mock_response, client):
     """
     Test the /subscriptions endpoint.
     """
-    # 1) Mock requests.get to return a successful response
-    mock_response = MagicMock()
-    mock_response.ok = True
-    mock_response.json.return_value = {"subscriptions": ["Feed1", "Feed2"]}
-    mock_get.return_value = mock_response
+    mock_requests_get.return_value = proxy_mock_response({"subscriptions": ["Feed1", "Feed2"]})
 
-    # 2) Call a valid endpoint from ALLOWED_ENDPOINTS
     response = client.get("/subscriptions")
     assert response.status_code == 200
 
-    # 3) Check the returned JSON
     data = response.get_json()
     assert "subscriptions" in data
     assert data["subscriptions"] == ["Feed1", "Feed2"]
 
-    # 4) Ensure the mock was called once with expected params
-    mock_get.assert_called_once()
-    _, kwargs = mock_get.call_args
+    mock_requests_get.assert_called_once()
+    _, kwargs = mock_requests_get.call_args
     assert "headers" in kwargs
+    assert kwargs["headers"] == {"Authorization": f"GoogleLogin auth={AUTH_TOKEN}"}
     assert kwargs["params"] == {"output": "json"}
-    assert kwargs["timeout"] == 10
+    assert kwargs["timeout"] == REQUEST_TIMEOUT
 
 
-@patch("freshproxy.proxy_routes.requests.get")
-def test_valid_feed_contents(mock_get, client):
+def test_valid_feed_contents(mock_requests_get, proxy_mock_response, client):
     """
     Test the /feed/<id> endpoint with query parameters.
     """
-    mock_response = MagicMock()
-    mock_response.ok = True
-    mock_response.json.return_value = {"feed": ["Feed1", "Feed2"]}
-    mock_get.return_value = mock_response
+    mock_requests_get.return_value = proxy_mock_response({"feed": ["Feed1", "Feed2"]})
 
     feed_id = "40"
     query_param = {"n": "1"}
@@ -72,33 +94,31 @@ def test_valid_feed_contents(mock_get, client):
     assert "feed" in data
     assert data["feed"] == ["Feed1", "Feed2"]
 
-    mock_get.assert_called_once()
-    _, kwargs = mock_get.call_args
+    mock_requests_get.assert_called_once()
+    _, kwargs = mock_requests_get.call_args
     assert "headers" in kwargs
     assert kwargs["params"] == query_param
-    assert kwargs["timeout"] == 10
+    assert kwargs["timeout"] == REQUEST_TIMEOUT
 
 
-@patch("freshproxy.proxy_routes.requests.get")
-def test_timeout_subscriptions(mock_get, client):
+def test_timeout_subscriptions(mock_requests_get, client):
     """
     Test that a timeout in requests.get leads to a 504 response for /subscriptions.
     """
-    mock_get.side_effect = requests.Timeout()
+    mock_requests_get.side_effect = requests.Timeout()
 
     response = client.get("/subscriptions")
     assert response.status_code == 504
     assert "timed out" in response.get_json()["error"]
 
 
-@patch("freshproxy.proxy_routes.requests.get")
-def test_json_decode_error_subscriptions(mock_get, client):
+def test_json_decode_error_subscriptions(mock_requests_get, client):
     """
     Test that a JSON decode error leads to a 500 response for /subscriptions.
     """
     mock_response = MagicMock()
     mock_response.json.side_effect = ValueError("Bad JSON format")
-    mock_get.return_value = mock_response
+    mock_requests_get.return_value = mock_response
 
     response = client.get("/subscriptions")
     assert response.status_code == 500
@@ -106,14 +126,34 @@ def test_json_decode_error_subscriptions(mock_get, client):
     assert "Failed to decode JSON response" in body["error"]
 
 
-@patch("freshproxy.proxy_routes.requests.get")
-def test_endpoint_with_query_params(mock_get, client):
+def test_subscriptions_accepts_query_params(mock_requests_get, proxy_mock_response, client):
     """
-    Test that an endpoint containing a query param is accepted.
+    Test that the /subscriptions endpoint accepts and correctly forwards query parameters.
     """
-    mock_response = MagicMock()
-    mock_response.ok = True
-    mock_response.json.return_value = {"subscriptions": ["Feed1", "Feed2"]}
-    mock_get.return_value = mock_response
+    mock_requests_get.return_value = proxy_mock_response({"subscriptions": ["Feed1", "Feed2"]})
+
     response = client.get("/subscriptions?output=json")
     assert response.status_code == 200
+
+    data = response.get_json()
+    assert "subscriptions" in data
+
+    mock_requests_get.assert_called_once()
+    _, kwargs = mock_requests_get.call_args
+    assert "headers" in kwargs
+    assert kwargs["params"] == {"output": "json"}
+    assert kwargs["timeout"] == REQUEST_TIMEOUT
+
+
+def test_invalid_feed_id(mock_requests_get, client):
+    """
+    Test that an invalid feed_id format returns a 400 Bad Request.
+    """
+    invalid_feed_id = "invalid123"
+
+    response = client.get(f"/feed/{invalid_feed_id}")
+    assert response.status_code == 400
+    body = response.get_json()
+    assert "Invalid feed_id format" in body["error"]
+
+    mock_requests_get.assert_not_called()

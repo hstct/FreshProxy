@@ -94,7 +94,7 @@ def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     if not is_valid_feed_id(feed_id):
         logger.warning(f"Invalid feed_id format received: {feed_id}")
-        return jsonify({"error": "Invalide feed_id format"}), 400
+        return jsonify({"error": "Invalid feed_id format"}), 400
 
     base_endpoint = ALLOWED_ENDPOINTS.get("feed")
     if not base_endpoint:
