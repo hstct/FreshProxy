@@ -14,7 +14,10 @@ AUTH_TOKEN: str = os.getenv("FRESHRSS_API_TOKEN", "")
 BASE_URL: str = os.getenv("FRESHRSS_BASE_URL", "").rstrip("/")
 REQUEST_TIMEOUT: int = int(os.getenv("FRESHPROXY_REQUEST_TIMEOUT", 10))
 ALLOWED_ORIGINS_ENV: str = os.getenv("FRESHPROXY_ALLOWED_ORIGINS", "")
-ALLOWED_ENDPOINTS: Dict[str, str] = {"subscriptions": "subscription/list", "feed": "stream/contents/feed"}
+ALLOWED_ENDPOINTS: Dict[str, str] = {
+    "subscriptions": "subscription/list",
+    "feed": "stream/contents/feed",
+}
 
 # Split, strip, and filter out empty strings
 ALLOWED_ORIGINS: List[str] = [
@@ -27,7 +30,7 @@ HOST: str = os.getenv("FRESHPROXY_HOST", "0.0.0.0")
 PORT: int = int(os.getenv("FRESHPROXY_PORT", 8000))
 
 # Logging config
-LOG_FORMAT: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_LEVEL: int = logging.DEBUG if DEBUG else logging.INFO
 
 # Warning if essential environment variable is missing

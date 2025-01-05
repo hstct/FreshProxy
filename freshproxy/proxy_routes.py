@@ -21,7 +21,8 @@ def proxy_request(endpoint: str, params: dict) -> Union[Response, Tuple[Response
         params (dict): Query parameters to include in the request.
 
     Returns:
-        Union[Response, Tuple[Response, int]]: Flask Response object or a tuple of Response and status code.
+        Union[Response, Tuple[Response, int]]: Flask Response object or a tuple of Response
+                                               and status code.
     """
     url = f"{BASE_URL}/{endpoint}"
     headers = {"Authorization": f"GoogleLogin auth={AUTH_TOKEN}"}

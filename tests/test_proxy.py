@@ -40,7 +40,8 @@ def proxy_mock_response():
     """
     Pytest fixture to set up mock responses.
     """
-    def _proxy_mock_response(return_value, success = True):
+
+    def _proxy_mock_response(return_value, success=True):
         mock_response = MagicMock()
         mock_response.ok = success
         mock_response.json.return_value = return_value

@@ -11,6 +11,7 @@ def test_missing_env_vars(monkeypatch, caplog):
 
     with caplog.at_level(logging.WARNING):
         import freshproxy.config
+
         importlib.reload(freshproxy.config)
 
         assert "Proxy may not function correctly" in caplog.text
@@ -24,6 +25,7 @@ def test_missing_api_token(monkeypatch, caplog):
 
     with caplog.at_level(logging.WARNING):
         import freshproxy.config
+
         importlib.reload(freshproxy.config)
 
         assert "Proxy may not function correctly" in caplog.text
@@ -37,6 +39,7 @@ def test_missing_base_url(monkeypatch, caplog):
 
     with caplog.at_level(logging.WARNING):
         import freshproxy.config
+
         importlib.reload(freshproxy.config)
 
         assert "Proxy may not function correctly" in caplog.text
@@ -52,6 +55,7 @@ def test_allowed_origins_parsing(monkeypatch):
     )
 
     import freshproxy.config
+
     importlib.reload(freshproxy.config)
 
     expected_origins = [
@@ -72,6 +76,7 @@ def test_default_values(monkeypatch):
     monkeypatch.delenv("FRESHPROXY_PORT", raising=False)
 
     import freshproxy.config
+
     importlib.reload(freshproxy.config)
 
     assert freshproxy.config.ALLOWED_ORIGINS == []
