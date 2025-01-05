@@ -23,6 +23,7 @@ def create_app() -> Flask:
     app.register_blueprint(proxy_bp)
     logger.debug("Blueprint 'proxy_bp' registered.")
 
-    CORS(app, resources={r"/": {"origins": ALLOWED_ORIGINS}})
+    CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
+    logger.debug(f"CORS configured with allowed origins: {ALLOWED_ORIGINS}")
 
     return app

@@ -40,7 +40,6 @@ def proxy_request(endpoint: str, params: dict) -> Union[Response, Tuple[Response
 
 
 @proxy_bp.route("/subscriptions", methods=["GET"])
-@cross_origin(origins=ALLOWED_ORIGINS)
 def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
     """
     Proxy endpoint for /subscriptions -> FreshRSS subscription/list
@@ -57,7 +56,6 @@ def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
 
 
 @proxy_bp.route("/feed/<feed_id>", methods=["GET"])
-@cross_origin(origins=ALLOWED_ORIGINS)
 def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Proxy endpoint for /feed/<id> -> FreshRSS stream/contents/feed/<id>
