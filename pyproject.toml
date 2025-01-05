@@ -12,22 +12,26 @@ authors = [
 
 keywords = ["Flask", "FreshRSS", "proxy", "API"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Framework :: Flask",
-    "Operating System :: OS Indepenent",
-    "License :: OSI Approved :: GNU Affero General Public License v3"
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Intended Audience :: Developers",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
 ]
 
 dependencies = [
     "Flask~=3.1.0",
     "Flask-Cors~=5.0.0",
-    "requests~=2.32.0",
+    "requests~=2.32.3",
     "python-dotenv~=1.0.0",
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest~=8.3.0",
+    "pytest~=8.3.4",
     "pytest-cov~=6.0.0",
 ]
 lint = [
