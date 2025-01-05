@@ -10,10 +10,11 @@ A **Flask**-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) tha
 
 - **Dedicated Proxy Endpoints**:
     - `/subscriptions` -> `subscription/list`.
-    - `/feeds/<id>` -> `stream/contents/feed/<id>`.
+    - `/feed/<id>` -> `stream/contents/feed/<id>`.
 - **CORS** restrictions to only allow certain origins.
 - **Timeout** and error handling for upstream requests.
 - **Environment-based configuration** (via `.env` or standard env vars).
+- **Docker Support** for easy deployment.
 
 ## Project Structure
 
@@ -38,37 +39,30 @@ freshproxy/
 
 ## Installation
 
-1. **Clone** the repository:
+1. Clone the repository:
 ```bash
 git clone https://github.com/hstct/FreshProxy.git
 cd FreshProxy
 ```
-2. **Install dependencies** (pick one approach):
-    - Using **requirements.txt**: `pip install -r requirements.txt`
-    - Using **pyproject.toml**:
+2. Install dependencies (pick one approach):
+    - Using **pip** `requirements.txt`:
+    ```bash
+    pip install -r requirements.txt
+    ```
+    - Using **pip** with `pyproject.toml`:
     ```bash
     pip install .
     # or for dev/test extras
     pip install .[test,lint]
     ```
-3. **(Optional) Provide a `.env` file**:
-    - Copy `.env.example` to `.env`.
-    - Fill in actual secrets and config.
-    - See [Configuration via .env](#configuration-via-env) below.
 
-## Configuration via .env
+## Configuration
 
-**freshproxy/config.py** uses `python-dotenv` to load environment variables.
-
-- `FRESHRSS_API_TOKEN`: Secret token used to call FreshRSS behind the scenes.
-- `FRESHRSS_BASE_URL`: Root URL of your FreshRSS GReader API (no trailing slash).
-- `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
-- `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
-- `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
-- `FRESHPROXY_DEBUG`: Whether or not to run the application in Debug mode. (Default: `False`)
-
-A sample `.env.example` might look like:
-
+1. Create a `.env` file:
+```bash
+cp .env.example .env
+```
+2. Edit the `.env` file with your configurations:
 ```dotenv
 FRESHRSS_API_TOKEN=your-secret-token
 FRESHRSS_BASE_URL=https://freshrss.example.com/greader.php
@@ -77,14 +71,26 @@ FRESHPROXY_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
 FRESHPROXY_HOST=0.0.0.0
 FRESHPROXY_PORT=8000
 FRESHPROXY_DEBUG=False
+FRESHPROXY_REQUEST_TIMEOUT=10
 ```
+
+
+### Environment Variables
+
+- `FRESHRSS_API_TOKEN`: Secret token used to authenticate with your FreshRSS instance.
+- `FRESHRSS_BASE_URL`: Root URL of your FreshRSS GReader API (no trailing slash).
+- `FRESHPROXY_ALLOWED_ORIGINS`: Comma-separated list of origins for CORS.
+- `FRESHPROXY_HOST`: The Flask host. (Default: `0.0.0.0`)
+- `FRESHPROXY_PORT`: The Flask port. (Default: `8000`)
+- `FRESHPROXY_DEBUG`: Enable debug mode. (Default: `False`)
+- `FRESHPROXY_REQUEST_TIMEOUT`: Timeout for proxied requests in seconds. (Default: `10`)
 
 ## Running the Proxy
 
 ### Local Development
 
-1. Edit or create `.env` with your secrets and config.
-2. Run in dev mode:
+1. Ensure `.env` is configured with your secrets and config.
+2. Run the application:
 ```bash
 python run.py
 ```
@@ -96,22 +102,21 @@ or open in your browser.
 
 ### Production
 
-**Gunicorn** is recommended:
-```bash
-gunicorn --bind 0.0.0.0:8000 freshproxy.app:create_app()
-```
+**Gunicorn** is recommended for the application in production:
 
-Ensure you set env variables (e.g., via Docker, a systemd file, or your hosting environment).
+```bash
+gunicorn --bind 0.0.0.0:8000 freshproxy.app:create_app --worker-class sync --workers 4
+```
 
 ## Docker Usage
 
-A **Dockerfile** is included for container-based deployment:
+A Dockerfile is included for container-based deployment:
 
 1. Build the Docker image:
 ```bash
 docker build -t freshproxy .
 ```
-2. Run it:
+2. Run the container:
 ```bash
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
@@ -120,6 +125,7 @@ docker run -p 8000:8000 \
   -e FRESHPROXY_HOST="0.0.0.0" \
   -e FRESHPROXY_PORT=8000 \
   -e FRESHPROXY_DEBUG=False \
+  -e FRESHPROXY_REQUEST_TIMEOUT=10 \
   freshproxy
 ```
 3. Test:
@@ -140,5 +146,3 @@ black .
 flake8 .
 ```
 5. Commit & push your branch, then open a pull request.
-
-We appreciate your help in making **FreshProxy** more robust and easier to use!
