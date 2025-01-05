@@ -1,0 +1,53 @@
+name: Testing Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Lint, Format, and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.11]
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .[test,lint]
+
+
+      # Step 4: Lint with flake8
+      - name: Lint
+        run: |
+          flake8 .
+
+      # Step 5: Check formatting with black
+      - name: Check formatting
+        run: |
+          black --check .
+
+      # Step 6: Run tests
+      - name: Run Tests with pytest
+        run: |
+          pytest --cov=.
