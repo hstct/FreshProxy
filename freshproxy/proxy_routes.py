@@ -1,4 +1,5 @@
 import logging
+import re
 import requests
 
 from typing import Union, Tuple
@@ -48,6 +49,19 @@ def proxy_request(endpoint: str, params: dict) -> Union[Response, Tuple[Response
         )
 
 
+def is_valid_feed_id(feed_id: str) -> bool:
+    """
+    Validates the format of the feed_id.
+
+    Args:
+        feed_id (str): The feed ID to validate.
+
+    Returns:
+        bool: True if valid, False otherwise.
+    """
+    return re.fullmatch(r"\d+", feed_id) is not None
+
+
 @proxy_bp.route("/subscriptions", methods=["GET"])
 def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
     """
@@ -78,6 +92,10 @@ def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
     Returns:
         Union[Response, Tuple[Response, int]]: JSON response or error message with status code.
     """
+    if not is_valid_feed_id(feed_id):
+        logger.warning(f"Invalid feed_id format received: {feed_id}")
+        return jsonify({"error": "Invalide feed_id format"}), 400
+
     base_endpoint = ALLOWED_ENDPOINTS.get("feed")
     if not base_endpoint:
         logger.error("FreshRSS base endpoint for 'feed' not configured.")
