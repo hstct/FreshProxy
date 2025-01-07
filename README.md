@@ -65,7 +65,7 @@ cp .env.example .env
 2. Edit the `.env` file with your configurations:
 ```dotenv
 FRESHRSS_API_TOKEN=your-secret-token
-FRESHRSS_BASE_URL=https://freshrss.example.com/greader.php
+FRESHRSS_BASE_URL=https://freshrss.example.com/api/greader.php/reader/api/0
 
 FRESHPROXY_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
 FRESHPROXY_HOST=0.0.0.0
@@ -120,7 +120,7 @@ docker build -t freshproxy .
 ```bash
 docker run -p 8000:8000 \
   -e FRESHRSS_API_TOKEN="my-secret-token" \
-  -e FRESHRSS_BASE_URL="https://freshrss.example.com/greader.php" \
+  -e FRESHRSS_BASE_URL="https://freshrss.example.com/api/greader.php/reader/api/0" \
   -e FRESHPROXY_ALLOWED_ORIGINS="http://localhost:3000,https://mydomain.com" \
   -e FRESHPROXY_HOST="0.0.0.0" \
   -e FRESHPROXY_PORT=8000 \
