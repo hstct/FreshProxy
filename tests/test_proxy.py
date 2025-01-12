@@ -158,3 +158,128 @@ def test_invalid_feed_id(mock_requests_get, client):
     assert "Invalid feed_id format" in body["error"]
 
     mock_requests_get.assert_not_called()
+
+
+def test_aggregated_all_latest(client, mock_requests_get):
+    """
+    Test the /all-latest aggregator route.
+    """
+    subscription_response = MagicMock()
+    subscription_response.ok = True
+    subscription_response.json.return_value = {
+        "subscriptions": [
+            {
+                "id": "feed1",
+                "title": "Feed 1",
+                "htmlUrl": "https://feed1-url",
+                "iconUrl": "https://icon1-url",
+                "categories": [{"label": "favs"}],
+            },
+            {
+                "id": "feed2",
+                "title": "Feed 2",
+                "htmlUrl": "https://feed2-url",
+                "iconUrl": "https://icon2-url",
+                "categories": [],
+            },
+        ]
+    }
+
+    feed1_response = MagicMock()
+    feed1_response.ok = True
+    feed1_response.json.return_value = {
+        "items": [
+            {
+                "title": "Feed1 Post Title",
+                "published": 1697000000,
+                "alternate": [{"href": "https://feed1-post-url"}],
+            }
+        ]
+    }
+
+    feed2_response = MagicMock()
+    feed2_response.ok = True
+    feed2_response.json.return_value = {
+        "items": [
+            {
+                "title": "Feed2 Post Title",
+                "published": 1697100000,
+                "alternate": [{"href": "https://feed2-post-url"}],
+            }
+        ]
+    }
+
+    mock_requests_get.side_effect = [
+        subscription_response,
+        feed1_response,
+        feed2_response,
+    ]
+
+    response = client.get("/all-latest?n=1&page=1&limit=2")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "feeds" in data
+    assert len(data["feeds"]) == 2
+
+    feed1_data = next((f for f in data["feeds"] if f["id"] == "feed1"), None)
+    assert feed1_data is not None
+    assert feed1_data["title"] == "Feed 1"
+    assert len(feed1_data["items"]) == 1
+    assert feed1_data["items"][0]["title"] == "Feed1 Post Title"
+
+    feed2_data = next((f for f in data["feeds"] if f["id"] == "feed2"), None)
+    assert feed2_data is not None
+    assert feed2_data["title"] == "Feed 2"
+    assert len(feed2_data["items"]) == 1
+    assert feed2_data["items"][0]["title"] == "Feed2 Post Title"
+
+    calls = mock_requests_get.call_args_list
+    assert len(calls) == 3
+
+    assert "subscription/list" in calls[0][0][0]
+    assert "/feed/feed1" in calls[1][0][0]
+    assert "/feed/feed2" in calls[2][0][0]
+
+
+def test_aggreated_error_handling(client, mock_requests_get):
+    """
+    Test aggregator handling a feed fetch error with retries.
+    """
+    subscription_response = MagicMock()
+    subscription_response.ok = True
+    subscription_response.json.return_value = {
+        "subscriptions": [
+            {"id": "feed1", "title": "Feed 1"},
+        ]
+    }
+
+    fail_response = MagicMock()
+    fail_response.raise_for_status.side_effect = requests.RequestException("500 Server Error")
+    success_response = MagicMock()
+    success_response.ok = True
+    success_response.json.return_value = {
+        "items": [
+            {"title": "Feed1 Post Title", "published": 1697000000},
+        ]
+    }
+
+    mock_requests_get.side_effect = [
+        subscription_response,  # /subscription/list
+        fail_response,  # /feed/feed1 attempt #1
+        success_response,  # /feed/feed1 attempt #2
+    ]
+
+    response = client.get("/all-latest?n=1")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "feeds" in data
+
+    feed_data = data["feeds"][0]
+    assert feed_data["id"] == "feed1"
+    # Should have retrieved the item after retry
+    assert len(feed_data["items"]) == 1
+    assert feed_data["items"][0]["title"] == "Feed1 Post Title"
+
+    calls = mock_requests_get.call_args_list
+    assert len(calls) == 3
