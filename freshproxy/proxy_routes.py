@@ -21,7 +21,7 @@ def get_cache_key(label, n):
     """
     Create a unique cache key for aggregator queries.
     """
-    return f"all-latest-flattened|{label}|{n}"
+    return f"digest|{label}|{n}"
 
 
 def set_cache_value(cache_key, value):
@@ -138,55 +138,10 @@ def is_valid_feed_id(feed_id: str) -> bool:
     return re.fullmatch(r"\d+", feed_id) is not None
 
 
-@proxy_bp.route("/subscriptions", methods=["GET"])
-def get_subscriptions() -> Union[Response, Tuple[Response, int]]:
+@proxy_bp.route("/digest", methods=["GET"])
+def get_digest():
     """
-    Proxy endpoint for /subscriptions -> FreshRSS subscription/list
-
-    Returns:
-        Union[Response, Tuple[Response, int]]: JSON response or error message with status code.
-    """
-    endpoint = ALLOWED_ENDPOINTS.get("subscriptions")
-    if not endpoint:
-        logger.error("FreshRSS endpoint for 'subscriptions' not configured.")
-        return jsonify({"error": "Internal server error"}), 500
-
-    params = request.args.to_dict()
-    params.update({"output": "json"})
-
-    return proxy_request(endpoint, params)
-
-
-@proxy_bp.route("/feed/<feed_id>", methods=["GET"])
-def get_feed_contents(feed_id: str) -> Union[Response, Tuple[Response, int]]:
-    """
-    Proxy endpoint for /feed/<id> -> FreshRSS stream/contents/feed/<id>
-
-    Args:
-        feed_id (str): The ID of the feed to retrieve contents for.
-
-    Returns:
-        Union[Response, Tuple[Response, int]]: JSON response or error message with status code.
-    """
-    if not is_valid_feed_id(feed_id):
-        logger.warning(f"Invalid feed_id format received: {feed_id}")
-        return jsonify({"error": "Invalid feed_id format"}), 400
-
-    base_endpoint = ALLOWED_ENDPOINTS.get("feed")
-    if not base_endpoint:
-        logger.error("FreshRSS base endpoint for 'feed' not configured.")
-        return jsonify({"error": "Internal server error"}), 500
-
-    endpoint = f"{base_endpoint}/{feed_id}"
-    params = request.args.to_dict()
-
-    return proxy_request(endpoint, params)
-
-
-@proxy_bp.route("/all-latest", methods=["GET"])
-def get_all_latest():
-    """
-    Return a globally-sorted list of the latest items across all feeds (optionally filtered by label).
+    Return a sorted list of the latest items across all feeds (optionally filtered by label).
 
     Query params:
         - label:    Filter feeds by this label (optional)

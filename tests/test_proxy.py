@@ -3,7 +3,6 @@ import requests
 
 from unittest.mock import patch, MagicMock
 from freshproxy.app import create_app
-from freshproxy.config import AUTH_TOKEN, REQUEST_TIMEOUT
 from freshproxy.proxy_routes import AGGREGATOR_CACHE
 
 
@@ -70,97 +69,9 @@ def test_unsupported_endpoint(client):
     assert response.status_code == 404
 
 
-def test_valid_subscriptions(mock_requests_get, proxy_mock_response, client):
+def test_aggregated_digest(client, mock_requests_get):
     """
-    Test the /subscriptions endpoint.
-    """
-    mock_requests_get.return_value = proxy_mock_response({"subscriptions": ["Feed1", "Feed2"]})
-
-    response = client.get("/subscriptions")
-    assert response.status_code == 200
-
-    data = response.get_json()
-    assert "subscriptions" in data
-    assert data["subscriptions"] == ["Feed1", "Feed2"]
-
-    mock_requests_get.assert_called_once()
-    _, kwargs = mock_requests_get.call_args
-    assert "headers" in kwargs
-    assert kwargs["headers"] == {"Authorization": f"GoogleLogin auth={AUTH_TOKEN}"}
-    assert kwargs["params"] == {"output": "json"}
-    assert kwargs["timeout"] == REQUEST_TIMEOUT
-
-
-def test_valid_feed_contents(mock_requests_get, proxy_mock_response, client):
-    """
-    Test the /feed/<id> endpoint with query parameters.
-    """
-    mock_requests_get.return_value = proxy_mock_response({"feed": ["Feed1", "Feed2"]})
-
-    feed_id = "40"
-    query_param = {"n": "1"}
-
-    response = client.get(f"/feed/{feed_id}", query_string=query_param)
-
-    assert response.status_code == 200
-    data = response.get_json()
-    assert "feed" in data
-    assert data["feed"] == ["Feed1", "Feed2"]
-
-    mock_requests_get.assert_called_once()
-    _, kwargs = mock_requests_get.call_args
-    assert "headers" in kwargs
-    assert kwargs["params"] == query_param
-    assert kwargs["timeout"] == REQUEST_TIMEOUT
-
-
-def test_timeout_subscriptions(mock_requests_get, client):
-    """
-    Test that a timeout in requests.get leads to a 504 response for /subscriptions.
-    """
-    mock_requests_get.side_effect = requests.Timeout()
-
-    response = client.get("/subscriptions")
-    assert response.status_code == 504
-    assert "timed out" in response.get_json()["error"]
-
-
-def test_json_decode_error_subscriptions(mock_requests_get, client):
-    """
-    Test that a JSON decode error leads to a 500 response for /subscriptions.
-    """
-    mock_response = MagicMock()
-    mock_response.json.side_effect = ValueError("Bad JSON format")
-    mock_requests_get.return_value = mock_response
-
-    response = client.get("/subscriptions")
-    assert response.status_code == 500
-    body = response.get_json()
-    assert "Failed to decode JSON response" in body["error"]
-
-
-def test_subscriptions_accepts_query_params(mock_requests_get, proxy_mock_response, client):
-    """
-    Test that the /subscriptions endpoint accepts and correctly forwards query parameters.
-    """
-    mock_requests_get.return_value = proxy_mock_response({"subscriptions": ["Feed1", "Feed2"]})
-
-    response = client.get("/subscriptions?output=json")
-    assert response.status_code == 200
-
-    data = response.get_json()
-    assert "subscriptions" in data
-
-    mock_requests_get.assert_called_once()
-    _, kwargs = mock_requests_get.call_args
-    assert "headers" in kwargs
-    assert kwargs["params"] == {"output": "json"}
-    assert kwargs["timeout"] == REQUEST_TIMEOUT
-
-
-def test_aggregated_all_latest(client, mock_requests_get):
-    """
-    Test the /all-latest aggregator route, ensuring we get a flat list of items
+    Test the /digest aggregator route, ensuring we get a flat list of items
     sorted by 'published' descending, along with pagination metadata.
     """
     subscription_response = MagicMock()
@@ -213,7 +124,7 @@ def test_aggregated_all_latest(client, mock_requests_get):
         feed2_response,
     ]
 
-    response = client.get("/all-latest?n=1&page=1&limit=2")
+    response = client.get("/digest?n=1&page=1&limit=2")
     assert response.status_code == 200
 
     data = response.get_json()
@@ -266,7 +177,7 @@ def test_aggreated_error_handling(client, mock_requests_get):
         success_response,
     ]
 
-    response = client.get("/all-latest?n=1")
+    response = client.get("/digest?n=1")
     assert response.status_code == 200
 
     data = response.get_json()
@@ -325,7 +236,7 @@ def test_invalid_feed_id(client, mock_requests_get):
         valid_feed_response,
     ]
 
-    response = client.get("/all-latest?n=1")
+    response = client.get("/digest?n=1")
     assert response.status_code == 200
 
     data = response.get_json()
@@ -342,7 +253,7 @@ def test_invalid_feed_id(client, mock_requests_get):
     assert len(calls) == 2
 
 
-def test_pagination_in_all_latest(client, mock_requests_get):
+def test_pagination_in_digest(client, mock_requests_get):
     """
     Test that pagination (page/limit) is properly applied to the global
     sorted list of items.
@@ -392,7 +303,7 @@ def test_pagination_in_all_latest(client, mock_requests_get):
         feed2_response,
     ]
 
-    response_page1 = client.get("/all-latest?n=2&page=1&limit=2")
+    response_page1 = client.get("/digest?n=2&page=1&limit=2")
     assert response_page1.status_code == 200
     data_page1 = response_page1.get_json()
     assert len(data_page1["items"]) == 2
@@ -402,7 +313,7 @@ def test_pagination_in_all_latest(client, mock_requests_get):
     assert data_page1["page"] == 1
     assert data_page1["limit"] == 2
 
-    response_page2 = client.get("/all-latest?n=2&page=2&limit=2")
+    response_page2 = client.get("/digest?n=2&page=2&limit=2")
     assert response_page2.status_code == 200
     data_page2 = response_page2.get_json()
     assert len(data_page2["items"]) == 2
@@ -413,9 +324,9 @@ def test_pagination_in_all_latest(client, mock_requests_get):
     assert data_page2["totalItems"] == 4
 
 
-def test_caching_all_latest(client, mock_requests_get):
+def test_caching_digest(client, mock_requests_get):
     """
-    Test that calling /all-latest with the same label/n parameters multiple times
+    Test that calling /digest with the same label/n parameters multiple times
     uses cached data on the second request and does NOT re-fetch feeds from FreshRSS.
     """
     subscription_response = MagicMock()
@@ -442,7 +353,7 @@ def test_caching_all_latest(client, mock_requests_get):
         feed1_response,
     ]
 
-    response = client.get("/all-latest?n=1")
+    response = client.get("/digest?n=1")
     assert response.status_code == 200
     data = response.get_json()
     assert len(data["items"]) == 1
@@ -452,7 +363,7 @@ def test_caching_all_latest(client, mock_requests_get):
     calls_after_first = mock_requests_get.call_args_list
     assert len(calls_after_first) == 2
 
-    response_cached = client.get("/all-latest?n=1")
+    response_cached = client.get("/digest?n=1")
     assert response_cached.status_code == 200
     data_cached = response_cached.get_json()
     assert len(data_cached["items"]) == 1

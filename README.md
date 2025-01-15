@@ -1,41 +1,23 @@
 # FreshProxy
 
-A **Flask**-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) that securely forwards specific API requests, eliminating the need for dynamic query parameters. Configurable via environment variables (or a `.env` file).
+A Flask-based proxy for [FreshRSS](https://github.com/FreshRSS/FreshRSS) that securely forwards API requests, eliminating the need to expose raw FreshRSS endpoints directly. Configurable via environment variables (or a `.env` file).
 
 ## Overview
 
-**FreshProxy** acts as a dedicated **HTTP proxy** for specific **FreshRSS** endpoints, enhancing security and simplifying request structures. By using dedicated proxy endpoints, you eliminate the need for dynamic query parameters, reducing potential attack vectors and improving clarity.
+FreshProxy acts as a dedicated HTTP proxy for your FreshRSS instance, enhancing security and simplifying request structures. By using a single proxy endpoint (`/digest`), you avoid having to expose or directly query each feed or subscription list from the client.
 
 ## Features
 
-- **Dedicated Proxy Endpoints**:
-    - `/subscriptions` -> `subscription/list`.
-    - `/feed/<id>` -> `stream/contents/feed/<id>`.
-- **CORS** restrictions to only allow certain origins.
+- **Single Aggregator Endpoint**:
+    - `GET /digest`: Returns a globally-sorted list of recent feed items from your FreshRSS instance.
+        - Optional query parameters:
+            - `label=<labelName>`: Filter feeds by label.
+            - `n=<int>`: Number of items to fetch per feed (defaults to 1).
+            - `page=<int> & limit=<int>`: For item-level pagination (defaults: page=1, limit=50).
+- **CORS** restrictions, allowing only whitelisted origins.
 - **Timeout** and error handling for upstream requests.
 - **Environment-based configuration** (via `.env` or standard env vars).
 - **Docker Support** for easy deployment.
-
-## Project Structure
-
-```text
-freshproxy/
-├── freshproxy/
-│   ├── __init__.py      # Makes 'freshproxy' a package
-│   ├── app.py           # Application factory & CORS setup
-│   ├── config.py        # Environment variables, whitelists
-│   └── proxy_routes.py  # Blueprint with the '/' GET route
-├── tests/
-│   ├── test_config.py   # Example environment var tests
-│   └── test_proxy.py    # Proxy route tests (mocking requests)
-├── requirements.txt     # Dependencies (Flask, requests, etc.)
-├── pyproject.toml       # Project metadata & optional deps
-├── run.py               # Dev entry point
-├── Dockerfile           # Container-based deployment
-├── .env.example         # Example environment variables (no secrets)
-├── .gitignore
-└── README.md
-```
 
 ## Installation
 
@@ -73,7 +55,6 @@ FRESHPROXY_PORT=8000
 FRESHPROXY_DEBUG=False
 FRESHPROXY_REQUEST_TIMEOUT=10
 ```
-
 
 ### Environment Variables
 
