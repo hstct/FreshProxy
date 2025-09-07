@@ -17,6 +17,7 @@ ALLOWED_ORIGINS_ENV: str = os.getenv("FRESHPROXY_ALLOWED_ORIGINS", "")
 ALLOWED_ENDPOINTS: Dict[str, str] = {
     "subscriptions": "subscription/list",
     "feed": "stream/contents/feed",
+    "label": "stream/contents/user/-/label",
 }
 
 # Split, strip, and filter out empty strings

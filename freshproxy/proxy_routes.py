@@ -3,6 +3,7 @@ import time
 import re
 import requests
 
+from urllib.parse import quote
 from typing import Union, Tuple
 from flask import Blueprint, request, jsonify, Response
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -136,6 +137,28 @@ def is_valid_feed_id(feed_id: str) -> bool:
     if feed_id.startswith("feed/"):
         feed_id = feed_id[len("feed/") :]
     return re.fullmatch(r"\d+", feed_id) is not None
+
+
+@proxy_bp.route("/label/<path:label>", methods=["GET"])
+def get_label_stream(label: str):
+    """
+    Proxy the FreshRSS label stream:
+        GET /stream/contents/user/-/label/{label}
+
+    Notes:
+        - We URL-encode the label safely.
+        - We pass through any query params from the client (e.g., n, c).
+        - We default output=json if not provided.
+    """
+    endpoint_base = ALLOWED_ENDPOINTS.get("label_stream", "stream/contents/user/-/label")
+    encoded_label = quote(label, safe="")  # ensure spaces & special chars are encoded
+    endpoint = f"{endpoint_base}/{encoded_label}"
+
+    # Forward all query params; ensure JSON response
+    params = dict(request.args)
+    params.setdefault("output", "json")
+
+    return proxy_request(endpoint, params)
 
 
 @proxy_bp.route("/digest", methods=["GET"])

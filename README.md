@@ -14,6 +14,8 @@ FreshProxy acts as a dedicated HTTP proxy for your FreshRSS instance, enhancing 
             - `label=<labelName>`: Filter feeds by label.
             - `n=<int>`: Number of items to fetch per feed (defaults to 1).
             - `page=<int> & limit=<int>`: For item-level pagination (defaults: page=1, limit=50).
+- **Label Stream Endpoint:**
+    - `GET /label/{label}`: Proxies FreshRSS label stream (`stream/contents/user/-/label/{label}`) and forwards query params like `n`, `c`, etc
 - **CORS** restrictions, allowing only whitelisted origins.
 - **Timeout** and error handling for upstream requests.
 - **Environment-based configuration** (via `.env` or standard env vars).

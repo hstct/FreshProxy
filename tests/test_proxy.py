@@ -373,3 +373,40 @@ def test_caching_digest(client, mock_requests_get):
     assert (
         len(calls_after_second) == 2
     ), "No new requests should be made on the second call if data was cached."
+
+
+def test_label_stream_success(client, mock_requests_get):
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = {
+        "items": [
+            {"title": "Labelled post", "published": 1697200000},
+        ]
+    }
+    mock_requests_get.return_value = mock_resp
+
+    resp = client.get("label/favs and stuff?n=2")
+    assert resp.status_code == 200
+
+    args, kwargs = mock_requests_get.call_args
+    called_url = args[0]
+    called_params = kwargs.get("params", {})
+
+    assert "/stream/contents/user/-/label/favs%20and%20stuff" in called_url
+    assert called_params.get("n") == "2"
+    assert called_params.get("output") == "json"
+
+    data = resp.get_json()
+    assert "items" in data
+    assert data["items"][0]["title"] == "Labelled post"
+
+
+def test_label_stream_error(client, mock_requests_get):
+    fail_resp = MagicMock()
+    fail_resp.raise_for_status.side_effect = requests.RequestException("502 Bad Gateway")
+    mock_requests_get.return_value = fail_resp
+
+    resp = client.get("/label/favs")
+    assert resp.status_code == 502
+    data = resp.get_json()
+    assert data["error"] == "Request error"
